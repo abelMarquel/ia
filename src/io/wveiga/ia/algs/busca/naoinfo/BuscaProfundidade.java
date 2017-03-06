@@ -1,20 +1,15 @@
 package io.wveiga.ia.algs.busca.naoinfo;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
-import java.util.Stack;
 
 import io.wveiga.ia.problema.Acao;
 import io.wveiga.ia.problema.Problema;
-import io.wveiga.ia.util.Preconditions;
 
 /**
  * "Na teoria dos grafos, busca em profundidade (ou busca em profundidade-primeiro, 
@@ -41,18 +36,18 @@ import io.wveiga.ia.util.Preconditions;
  * @param <S> tipo dos estado nos quais a busca vai ser realizada.
  * @param <T> Problema que a busca vai resolver.
  */
-public class BuscaProfundidade<S, T extends Problema<S>> {
+public class BuscaProfundidade<S, T extends Problema<S>> extends BuscaNaoInformada<S, T>{
 	
-	private final T problema;
-	
-	/**
-	 * Problema que a busca se propõe a resolver.
-	 * @param problema, modelo do problema, não nulo.
-	 */
-	public BuscaProfundidade(T problema){
-		Preconditions.nonNull(problema);
-		this.problema = problema;
+
+	public BuscaProfundidade(T problema) {
+		super(problema);
 	}
+
+	@Override
+	public Borda<S> criaBorda() {
+		return new BordaPilha<>();
+	}
+	
 	
 	/**
 	 * Busca recursivamente a solução, usando a própria pilha da linguagem para
@@ -62,6 +57,9 @@ public class BuscaProfundidade<S, T extends Problema<S>> {
 	 * @return Opcional com a lista de ações caso a solução seja encontrada ou vazio, caso contrário. 
 	 */
 	public Optional<List<Acao<S>>> buscaRecursiva() {
+		
+		T problema = getProblema();
+		
 		// 1. Inicializa o caminho utilizado na solução.
 		Queue<Acao<S>> caminho = new LinkedList<>();
 
@@ -86,6 +84,9 @@ public class BuscaProfundidade<S, T extends Problema<S>> {
 	
 
 	private boolean buscaRecusiva(Acao<S> acaoAtual, Queue<Acao<S>> caminho, Set<S> fechados ) {
+		
+		T problema = getProblema();
+		
 		// 1. Verifica-se o estado alvo da ação selecionada.
 		S alvo = acaoAtual.getEstadoAlvo();
 
@@ -119,73 +120,86 @@ public class BuscaProfundidade<S, T extends Problema<S>> {
 	}
 	
 	/**
-	 * Versão interativa da busca em profundidade.
-	 * Possui implementação mais complexa, mas não depende da pilha da linguagem, definindo sua própria
-	 * pilha para a solução.
+	 * Comportamento para inserção e remoção de ações (nós) da borda de uma Busca em Profundidade.
+	 * 	  
+	 * Basicamente decora uma pilha.
 	 * 
-	 * @return Opcional com a lista de ações caso a solução seja encontrada ou vazio, caso contrário.
+	 * @author Welington Veiga
+	 *
+	 * @param <S> Tipo de estado para onde as ações da borda podem levar.
 	 */
-	public Optional<List<Acao<S>>> buscaIterativa(){
-		// 1. Cria-se um hash para permitir as verificações de nós fechados em O(1)
-		Set<S> fechados = new HashSet<>();
-		// 1.1 Adiciona-se o estado inicial entre os nós fechados.
-		fechados.add(problema.estadoInicial());
+	private static class BordaPilha<S> implements Borda<S> {
 		
-		// 2. Para recuperar o caminho da busca em profundidade precisamos salvar o pai de cada estado.
-		// Isso só é necessário porque não basta encontrar a solução, é preciso conseguir reconstruir o
-		// caminho do estado inicial até a solução encontrada.
-		Map<Acao<S>, Acao<S>> caminho = new HashMap<>();
+		/**
+		 * OBS: A classe Stack do Java herda de Vector, o que não é desejével, não precisamos 
+		 * possuir suporte a acesso concorrente nesse contexto.
+		 * 
+		 * Por esse motivo estamos usando uma Lista Duplamente Encadeada para realizar o comportamento da pilha, 
+		 * sempre adicionando e removendo do final.
+		 */
+		private final LinkedList<Acao<S>> pilha = new LinkedList<>();
 		
-		// 3. Pilha explícita com os nós ainda não verificados na busca.
-		Stack<Acao<S>> abertos = new Stack<>();
-		// 3.1 Adicionamos o nó inicial.
-		abertos.add(Acao.nenhuma(problema.estadoInicial()));
-		
-		System.out.println("Estado Inicial\n"+problema.estadoInicial()+"\n\n");
-		
-		S estado;
-		do {
-			// 4 Repetimos enquanto não chegarmos à solução e ainda houver nós abertos.
-			// 4.1 retiramos a ação no topo da pilha de abertos.
-			Acao<S> acao = abertos.pop();
-			estado = acao.getEstadoAlvo();
-			
-			// 4.2 Adicionamos o estado alvo no Hash de estados fechados.
-			fechados.add(estado);
-			
-			//4.3 Se o estado atingido é solução a busca termina.
-			if (problema.solucao(estado)) {
-				// 4.3.1 Precisamos reconstruir o caminho na forma de uma lista de passos.
-				return Optional.of(reconstruirCaminhoAte(caminho, acao));
-			}
-			
-			// 4.4 Se ainda não chegamos à solução, verificamos a lista de ações possível a partir do estado atual.
-			List<Acao<S>> sucessores = problema.sucessores(estado);
-			// 4.5 Para cada estado possível.
-			for(Acao<S> proximaAcao : sucessores){
-				// 4.6 Se ele não é um retorno a um estado anterior no caminho.
-				if (!fechados.contains(proximaAcao.getEstadoAlvo())){
-					// 4.7 Selecionamos este estado e o adicionamos no topo da pilha de abertos.
-					abertos.add(proximaAcao);
-					// 4.8 Memorizamos o caminho e o pai dele para reconstruir o caminho quando a 
-					// Solução for encontrada.
-					caminho.put(proximaAcao, acao);
-				}
-			}			
-		} while(!problema.solucao(estado) && !abertos.isEmpty());
-		
-		return Optional.empty();
-	}
-
-	private List<Acao<S>> reconstruirCaminhoAte(Map<Acao<S>, Acao<S>> caminho, Acao<S> acao) {
-		List<Acao<S>> solucao = new LinkedList<>();
-		Acao<S> pai = acao;
-		while(pai!=null){
-			solucao.add(pai);
-			pai = caminho.get(pai);
+		/**
+		 * Insere uma ação na borda, isto é, adiciona no fim da fila.
+		 */
+		@Override
+		public void insere(Acao<S> acao) {
+			pilha.addLast(acao);
 		}
-		Collections.reverse(solucao);
-		return solucao;
-	}
-	
+
+
+		/**
+		 * Retira uma ação da borda, isto é, retorna e remove da primeira posição da fila.
+		 * 
+		 * @throws IllegalStateEsception se a fila estiver vazia.
+		 */
+		@Override
+		public Acao<S> retira() {
+			if (vazia()){
+				throw new IllegalStateException("Fila vazia");
+			} 
+			return pilha.removeLast();
+		}
+		
+
+		/**
+		 * Retorna true caso a fila esteja vazia, falso caso contrário.
+		 * 
+		 */		
+		@Override
+		public boolean vazia() {
+			return pilha.isEmpty();
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((pilha == null) ? 0 : pilha.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			BordaPilha<?> other = (BordaPilha<?>) obj;
+			if (pilha == null) {
+				if (other.pilha != null)
+					return false;
+			} else if (!pilha.equals(other.pilha))
+				return false;
+			return true;
+		}
+
+		@Override
+		public String toString() {
+			return "BordaPilha [pilha=" + pilha + "]";
+		}
+				
+	}	
 }
