@@ -13,6 +13,17 @@ import io.wveiga.ia.problema.Acao;
 import io.wveiga.ia.problema.Problema;
 import io.wveiga.ia.util.Preconditions;
 
+/**
+ * Abstração base para as buscas não informadas que diferem apenas em relação ao modo
+ * como nós (Ações) são adicionados e removidos de suas bordas.
+ * 
+ * Essa implementam é a base para implementações específicas.
+ * 
+ * @author Welington Veiga
+ *
+ * @param <S> tipo dos estado nos quais a busca vai ser realizada.
+ * @param <T> Problema que a busca vai resolver.
+ */
 public abstract class BuscaNaoInformada<S, T extends Problema<S>> {
 	
 	private final T problema;
@@ -99,8 +110,4 @@ public abstract class BuscaNaoInformada<S, T extends Problema<S>> {
 		Collections.reverse(solucao);
 		return solucao;
 	}
-	
-
-	
-
 }
