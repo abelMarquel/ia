@@ -1,5 +1,7 @@
 package io.wveiga.ia.problema;
 
+import io.wveiga.ia.ed.Custo;
+
 /**
  * Abstração para uma ação para resolver um problema, que possui um <b>estado alvo</b> após sua realização, 
  * um <b>custo</b> para ser realizada e um <b>nome</b> que descreve o tipo de ação referida.

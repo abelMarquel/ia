@@ -1,7 +1,7 @@
 package io.wveiga.ia.problema.npuzzle;
 
+import io.wveiga.ia.ed.Custo;
 import io.wveiga.ia.problema.Acao;
-import io.wveiga.ia.problema.Custo;
 import io.wveiga.ia.util.Preconditions;
 
 public class NPuzzleAcao implements Acao<NPuzzleTabuleiro> {

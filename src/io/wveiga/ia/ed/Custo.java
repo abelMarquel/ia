@@ -1,4 +1,4 @@
-package io.wveiga.ia.problema;
+package io.wveiga.ia.ed;
 
 import io.wveiga.ia.util.Preconditions;
 

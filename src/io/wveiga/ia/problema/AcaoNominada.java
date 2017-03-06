@@ -1,5 +1,6 @@
 package io.wveiga.ia.problema;
 
+import io.wveiga.ia.ed.Custo;
 import io.wveiga.ia.util.Preconditions;
 
 /**
